@@ -117,31 +117,61 @@ def test_missing_ingredient_name():
 
 
 #Testing Pantry Item
+
 def test_PantryItem():
+
     pantry1 = PantryItem(
-        name = 'Rice',
-        quantity = 2,
-        unit = 'cups'
+        name="Rice",
+        quantity=2,
+        unit="cups"
     )
 
     pantry2 = PantryItem(
-        name = 'Soy Sauce',
-        quantity = '250', #Intentionally adding number in string to check type cast
-        units = 'ml'
+        name="Soy Sauce",
+        quantity="250", #Intentionally adding number as str to check type casting by pydantic
+        unit="ml"
     )
 
     pantry3 = PantryItem(
-        name = 'Cookies'
+        name="Cookies"
     )
 
     with pytest.raises(ValidationError):
         PantryItem(
-            name = 'Tomatoes',
-            quantity = 'four',
-            unit = 'nos'
+            name = "Tomatoes",
+            quantity=-4,
+            unit="grams",
         )
 
-    assert pantry3.quantity == None
+    with pytest.raises(ValidationError):
+        PantryItem(
+            name="Rice",
+            quantity=0,
+            unit="cups"
+        )
+
+    #Test normal input
+    assert pantry1.name == "Rice"
+    assert pantry1.quantity == 2.0
+    assert pantry1.unit == "cups"
+
+    #Test automatic type conversion
+    assert pantry2.quantity == 250.0
+    assert isinstance(pantry2.quantity, float)
+    assert pantry2.unit == "ml"
+
+    #Test optional fields
+    assert pantry3.quantity is None
+    assert pantry3.unit is None
+
+    #Test invalid input
+    with pytest.raises(ValidationError):
+        PantryItem(
+            name="Tomatoes",
+            quantity="four",
+            unit="count"
+        )
+
 
 
 #Testing User Profile
@@ -154,13 +184,13 @@ def test_UserProfile():
         max_cooking_time_mins = 30,
         pantry = [
             PantryItem(
-                name = 'Rice', quantity = 250, units = 'grams'
+                name = 'Rice', quantity = 250, unit = 'grams'
             ),
             PantryItem(
-                name = 'Dal', quantity = 3, units = 'cups'
+                name = 'Dal', quantity = 3, unit = 'cups'
             ),
             PantryItem(
-                name = 'Onion', quantity = 1, units = 'nos'
+                name = 'Onion', quantity = 1, unit = 'nos'
             )
         ]
     )
@@ -170,13 +200,138 @@ def test_UserProfile():
             max_cooking_time_mins = 60,
             pantry = [
                 PantryItem(
-                    name = 'Beef', quantity = 100, units = 'pounds'
+                    name = 'Beef', quantity = 100, unit = 'pounds'
                 ),
                 PantryItem(
-                    name = 'Tomato Paste', quantity = 100, units = 'grams'
+                    name = 'Tomato Paste', quantity = 100, unit = 'grams'
                 ),
                 PantryItem(
-                    name = 'Chicken Stock', quantity = 1, units = 'cup'
+                    name = 'Chicken Stock', quantity = 1, unit = 'cup'
                 )
             ]
         )
+
+    #Verify first user profile
+    assert user1.allergies == ["Peanuts", "Raspberry"]
+    assert user1.dietary_preference == [
+        "Ketogenic",
+        "Pescatarian"
+    ]
+    assert user1.skill_level == "intermediate"
+    assert user1.max_cooking_time_mins == 30
+
+    #Verify pantry contents
+    assert len(user1.pantry) == 3
+    assert user1.pantry[0].name == "Rice"
+    assert user1.pantry[0].quantity == 250.0
+    assert user1.pantry[0].unit == "grams"
+
+    #Verify second user profile
+    assert user2.skill_level == "beginner"
+    assert user2.max_cooking_time_mins == 60
+    assert len(user2.pantry) == 3
+
+    #Verify default fields
+    assert user2.allergies == []
+    assert user2.dietary_preference == []
+
+#Test for invalid user level
+def test_invalid_skill_level():
+    with pytest.raises(ValidationError):
+        UserProfile(
+            skill_level="expert"
+        )
+
+#Test for invalid cooking time
+def test_invalid_cooking_time():
+    with pytest.raises(ValidationError):
+        UserProfile(
+            max_cooking_time_mins=-30
+        )
+
+    with pytest.raises(ValidationError):
+        UserProfile(
+            max_cooking_time_mins=0
+        )
+
+#Check for unexpected field when creating Ingredient item
+def test_unexpected_ingredient_field():
+    with pytest.raises(ValidationError):
+        Ingredient(
+            name="Rice",
+            quantity=200,
+            unit="grams",
+            unexpected_field="test"
+        )
+
+#Check for unexpected field when creating Pantry item
+def test_unexpected_pantry_field():
+    with pytest.raises(ValidationError):
+        PantryItem(
+            name="Rice",
+            quantity=200,
+            units="grams"
+        )
+
+#Checking for nested items
+def test_unexpected_nested_field():
+    with pytest.raises(ValidationError):
+        Recipe(
+            id="R001",
+            name="Vegetable Pulao",
+            ingredients=[
+                {
+                    "name": "Rice",
+                    "quantity": 200,
+                    "unit": "grams",
+                    "unexpected_field": "test"
+                }
+            ],
+            source=Source(
+                source_name="Demo Cookbook",
+                source_type="pdf"
+            )
+        )
+
+#Testing ingredient size
+
+def test_ingredient_size():
+    ingredient = Ingredient(
+        name="Onion",
+        quantity=1,
+        unit="count",
+        size="medium",
+        preparation="sliced"
+    )
+
+    assert ingredient.name == "Onion"
+    assert ingredient.quantity == 1.0
+    assert ingredient.unit == "count"
+    assert ingredient.size == "medium"
+    assert ingredient.preparation == "sliced"
+    assert ingredient.optional is False
+
+#Testing equipment size
+def test_equipment():
+    equipment = Equipment(
+        name="Saucepan",
+        size_relative="medium",
+        size_abs="2 L",
+        material="stainless steel"
+    )
+
+    assert equipment.name == "Saucepan"
+    assert equipment.size_relative == "medium"
+    assert equipment.size_abs == "2 L"
+    assert equipment.material == "stainless steel"
+
+#Testing optional fields for Equipment
+def test_equipment_optional_fields():
+    equipment = Equipment(
+        name="Cutting board"
+    )
+
+    assert equipment.name == "Cutting board"
+    assert equipment.size_relative is None
+    assert equipment.size_abs is None
+    assert equipment.material is None

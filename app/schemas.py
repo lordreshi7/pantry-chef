@@ -1,23 +1,13 @@
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal
 
+#Disabling pydantic to ignore wrong attributes being passed in tests or production
+class PantryBaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
 #Ingredient from recipe
-class Ingredient(BaseModel):
-    name: str
-    quantity: float | None = None
-    unit: str | None = None
-    optional: bool = False
-    preparation: str | None = None
-
-#Pantry Items that User provides. Keeping them as structured objects allows the llm to update values in structured manner instead of running evaluations everytime the user updates pantry items.
-class PantryItem(BaseModel):
-    name : str
-    quantity : float | None = Field(default = None, gt = 0)
-    unit: str | None = None
-
-#Equipment mentioned in recipe
-class Equipment(BaseModel):
+class Ingredient(PantryBaseModel):
     name: str
     quantity: float | None = None
     unit: str | None = None
@@ -25,21 +15,34 @@ class Equipment(BaseModel):
     preparation: str | None = None
     size: str | None = None
 
+#Pantry Items that User provides. Keeping them as structured objects allows the llm to update values in structured manner instead of running evaluations everytime the user updates pantry items.
+class PantryItem(PantryBaseModel):
+    name : str
+    quantity : float | None = Field(default = None, gt = 0)
+    unit: str | None = None
+
+#Equipment mentioned in recipe
+class Equipment(PantryBaseModel):
+    name: str
+    size_relative: str | None = None
+    size_abs: str | None = None
+    material: str | None = None
+
 #Step from recipe
-class Step(BaseModel):
+class Step(PantryBaseModel):
     step_number: int
     instruction: str
     duration_mins: int | None = None
 
 #Recipe Source
-class Source(BaseModel):
+class Source(PantryBaseModel):
     source_name: str
     source_type: str
     source_url: str | None = None
     page_number: list[int] = Field(default_factory=list)
 
 #THE Recipe
-class Recipe(BaseModel):
+class Recipe(PantryBaseModel):
     id: str
     name: str
     cuisine: str | None = None
@@ -56,7 +59,7 @@ class Recipe(BaseModel):
 
 
 #User Profile - attributes about the user that they self-describe based on questions asked by the agent.
-class UserProfile(BaseModel):
+class UserProfile(PantryBaseModel):
     allergies : list[str] = Field(default_factory=list)
     dietary_preference : list[str] = Field(default_factory=list)
     skill_level : Literal[
