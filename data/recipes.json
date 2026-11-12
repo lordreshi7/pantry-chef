@@ -1,0 +1,22 @@
+[
+    {
+        "id": "R001",
+        "name": "Vegetable Pulao",
+        "cuisine": null,
+        "servings": null,
+        "prep_time_mins": null,
+        "cook_time_mins": null,
+        "difficulty": null,
+        "dietary_classification": null,
+        "ingredients": [],
+        "steps": [],
+        "equipment": [],
+        "allergens": [],
+        "source": {
+            "source_name": "Demo Cookbook",
+            "source_type": "pdf",
+            "source_url": null,
+            "page_number": []
+        }
+    }
+]

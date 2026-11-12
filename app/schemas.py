@@ -19,9 +19,11 @@ class PantryItem(BaseModel):
 #Equipment mentioned in recipe
 class Equipment(BaseModel):
     name: str
-    size_relative: str | None = None
-    size_abs: str | None = None
-    material: str | None = None
+    quantity: float | None = None
+    unit: str | None = None
+    optional: bool = False
+    preparation: str | None = None
+    size: str | None = None
 
 #Step from recipe
 class Step(BaseModel):
